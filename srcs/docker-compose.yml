@@ -1,57 +1,42 @@
-version: '3'
+version: '3.8'
 
 services:
   nginx:
     build: ./nginx
-    container_name: nginx
     ports:
       - "443:443"
-    volumes:
-      - wordpress_data:/var/www/html
-    networks:
-      - inception
-    restart: always
     depends_on:
       - wordpress
+    networks:
+      - webnet
 
   wordpress:
     build: ./wordpress
-    container_name: wordpress
+    environment:
+      WORDPRESS_DB_HOST: mariadb
+      WORDPRESS_DB_USER: wordpress
+      WORDPRESS_DB_PASSWORD: wordpress
+      WORDPRESS_DB_NAME: wordpress
     volumes:
       - wordpress_data:/var/www/html
     networks:
-      - inception
-    restart: always
-    depends_on:
-      - mariadb
-    env_file:
-      - .env
+      - webnet
 
   mariadb:
     build: ./mariadb
-    container_name: mariadb
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: wordpress
+      MYSQL_USER: wordpress
+      MYSQL_PASSWORD: wordpress
     volumes:
-      - mariadb_data:/var/lib/mysql
+      - db_data:/var/lib/mysql
     networks:
-      - inception
-    restart: always
-    env_file:
-      - .env
-
-networks:
-  inception:
-    driver: bridge
+      - webnet
 
 volumes:
   wordpress_data:
-    driver: local
-    driver_opts:
-      type: none
-      device: ${PWD}/volumes/wordpress
-      o: bind
-  mariadb_data:
-    driver: local
-    driver_opts:
-      type: none
-      device: ${PWD}/volumes/mariadb
-      o: bind
+  db_data:
+
+networks:
+  webnet:
