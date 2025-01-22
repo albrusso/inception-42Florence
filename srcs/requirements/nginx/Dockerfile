@@ -1,22 +1,14 @@
-# Usa l'immagine base di Debian come base
-FROM debian:bullseye
+FROM debian:11
 
-# Installa Nginx
-RUN apt-get update && apt-get install -y \
-    nginx \
-    openssl \
-    && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y nginx openssl
 
-# Crea la cartella per i certificati SSL
-RUN mkdir -p /etc/nginx/ssl
+RUN mkdir -p /etc/nginx && \
+	openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
+	-keyout /etc/nginx/server.key -out /etc/nginx/server.crt \
+	-subj "/C=MR/ST=Tetouan/L=Tetouan/O=anas/OU=anas/CN=albrusso.42.fr"
 
-# Copia i file di configurazione di Nginx e i certificati SSL
-COPY default.conf /etc/nginx/conf.d/default.conf
-COPY ssl/server.crt /etc/nginx/ssl/server.crt
-COPY ssl/server.key /etc/nginx/ssl/server.key
+COPY ./conf/nginx.conf /etc/nginx/nginx.conf
 
-# Esponi la porta 443 (HTTPS)
 EXPOSE 443
 
-# Comando per avviare Nginx in modalità foreground
 CMD ["nginx", "-g", "daemon off;"]
