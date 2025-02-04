@@ -1,16 +1,24 @@
-FROM debian:12
+# Usa Debian come base
+FROM debian:bullseye
 
-RUN apt update && apt install -f -y \
-    php8.2-cli \
-    php8.2-fpm \
-    php8.2-mysql \
-    php-mysqli \
-    php-json \
-    php8.2-curl curl \
-    && sed -i "s|listen = /run/php/php8.2-fpm.sock|listen = 0.0.0.0:9000|g" /etc/php/8.2/fpm/pool.d/www.conf
+# Installa PHP, WP-CLI e dipendenze
+RUN apt-get update && apt-get install -y \
+    php-fpm php-mysql wget curl unzip mariadb-client && \
+    curl -O https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar && \
+    chmod +x wp-cli.phar && \
+    mv wp-cli.phar /usr/local/bin/wp
 
-COPY ./conf/wp-config-create.sh /wp-config-create.sh
+# Creazione della directory /run/php per PHP-FPM
+RUN mkdir -p /run/php && chown -R www-data:www-data /run/php
+# Imposta la cartella di lavoro
+WORKDIR /var/www/html
 
-EXPOSE 9000
+# Copia il file di configurazione PHP-FPM
+COPY www.conf /etc/php/7.4/fpm/pool.d/www.conf
 
-CMD ["sh", "wp-config-create.sh"]
+# Copia lo script di installazione
+COPY tools/setup.sh /setup.sh
+RUN chmod +x /setup.sh
+
+# Esegui lo script di installazione all'avvio
+CMD ["/setup.sh"]
